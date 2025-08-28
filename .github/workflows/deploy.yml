@@ -13,7 +13,9 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
-
+    - name: Test SSH key validity (optional)
+      run: |
+        echo "${{ secrets.VPS_KEY }}" | ssh-keygen -y -f - > /dev/null
     - name: Setup SSH key
       run: |
         mkdir -p ~/.ssh
