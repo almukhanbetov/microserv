@@ -24,7 +24,22 @@ jobs:
     - name: Connect & Deploy
       run: |
         ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-          cd /opt/probhub/microserv
-          git pull
-          docker compose up --build -d
-        EOF
+            # Указываем путь до проекта
+            DEPLOY_DIR="/opt/probhub/microserv"
+
+            # Если папка не существует или не является git-репозиторием — создаём и клонируем
+            if [ ! -d "$DEPLOY_DIR/.git" ]; then
+            echo "📁 Папка не найдена или не инициализирован git. Создаём..."
+            sudo mkdir -p "$DEPLOY_DIR"
+            sudo chown -R \$USER:\$USER "$DEPLOY_DIR"
+            git clone https://github.com/${{ github.repository }} "$DEPLOY_DIR"
+            else
+            echo "✅ Папка найдена. Обновляем проект..."
+            cd "$DEPLOY_DIR"
+            git pull
+            fi
+
+            cd "$DEPLOY_DIR"
+            docker compose up --build -d
+        EOF    
+
