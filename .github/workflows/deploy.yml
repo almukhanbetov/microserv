@@ -24,22 +24,35 @@ jobs:
     - name: Connect & Deploy
       run: |
         ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-            # Указываем путь до проекта
-            DEPLOY_DIR="/opt/probhub/microserv"
+          set -e  # Прерываем скрипт при любой ошибке
 
-            # Если папка не существует или не является git-репозиторием — создаём и клонируем
-            if [ ! -d "$DEPLOY_DIR/.git" ]; then
+          DEPLOY_DIR="/opt/probhub/microserv"
+
+          echo "🚀 Начинаем деплой..."
+
+          # Запускаем keep-alive процесс, чтобы GitHub не обрывал соединение
+          while true; do echo "⏳ Still working..."; sleep 30; done &
+          KEEP_ALIVE=$!
+
+          # Проверяем, существует ли директория и инициализирован ли git
+          if [ ! -d "$DEPLOY_DIR/.git" ]; then
             echo "📁 Папка не найдена или не инициализирован git. Создаём..."
-            sudo mkdir -p "$DEPLOY_DIR"
-            sudo chown -R \$USER:\$USER "$DEPLOY_DIR"
+            mkdir -p "$DEPLOY_DIR"
             git clone https://github.com/${{ github.repository }} "$DEPLOY_DIR"
-            else
+          else
             echo "✅ Папка найдена. Обновляем проект..."
             cd "$DEPLOY_DIR"
             git pull
-            fi
+          fi
 
-            cd "$DEPLOY_DIR"
-            docker compose up --build -d
-        EOF    
+          # Переходим в папку с проектом
+          cd "$DEPLOY_DIR"
 
+          echo "🐳 Собираем и запускаем контейнеры..."
+          docker compose up --build -d
+
+          echo "✅ Деплой завершён!"
+
+          # Завершаем keep-alive процесс
+          kill $KEEP_ALIVE
+        EOF

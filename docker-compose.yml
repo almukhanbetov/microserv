@@ -1,17 +1,17 @@
-version: "3.8"
-
 services:
   user-service:
     build: ./user-service
     container_name: user-service
     ports:
       - "9091:9091"
+    restart: unless-stopped
 
   notification-service:
     build: ./notification-service
     container_name: notification-service
     ports:
       - "9093:9093"
+    restart: unless-stopped
 
   order-service:
     build: ./order-service
@@ -21,3 +21,4 @@ services:
     depends_on:
       - user-service
       - notification-service
+    restart: unless-stopped
